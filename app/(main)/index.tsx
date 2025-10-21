@@ -21,9 +21,11 @@ export default function Dashboard() {
     const { user, updateUser, logout }: any = useAuth();
 
     const [leaveBalance, setLeaveBalance] = useState<any>({
-        annual: 0,
-        sick: 0,
-        personal: 0,
+        Earned_Leave: 0,
+        Sick_Leave: 0,
+        Reserved_Leave: 0,
+        Casual_Leave: 0,
+        Paid_Leave: 0
     });
     const [recentLeaves, setRecentLeaves] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -53,29 +55,31 @@ export default function Dashboard() {
             await updateUser(userInfo);
             if (userInfo.status === "ACCEPTED") {
                 setLeaveBalance({
-                    annual: 15,
-                    sick: 7,
-                    personal: 5,
+                    Earned_Leave: 10,
+                    Sick_Leave: 10,
+                    Reserved_Leave: 10,
+                    Casual_Leave: 5,
+                    Paid_Leave: 5
                 });
             }
 
 
-            setRecentLeaves([
-                {
-                    id: "1",
-                    type: "Annual Leave",
-                    startDate: "2025-10-15",
-                    endDate: "2025-10-17",
-                    status: "PENDING",
-                },
-                {
-                    id: "2",
-                    type: "Sick Leave",
-                    startDate: "2025-09-10",
-                    endDate: "2025-09-11",
-                    status: "APPROVED",
-                },
-            ]);
+            // setRecentLeaves([
+            //     {
+            //         id: "1",
+            //         type: "Annual Leave",
+            //         startDate: "2025-10-15",
+            //         endDate: "2025-10-17",
+            //         status: "PENDING",
+            //     },
+            //     {
+            //         id: "2",
+            //         type: "Sick Leave",
+            //         startDate: "2025-09-10",
+            //         endDate: "2025-09-11",
+            //         status: "APPROVED",
+            //     },
+            // ]);
         } catch (err: any) {
             console.error('Error fetching data:', err);
             setError(err.message || "Error fetching data");
@@ -201,27 +205,38 @@ export default function Dashboard() {
                             Leave Balance
                         </Text>
 
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            style={styles.balanceCards}
-                        >
-                            <View style={[styles.balanceCard, { backgroundColor: "#dbeafe" }]}>
-                                <Ionicons name="calendar" size={24} color="#2563eb" />
-                                <Text style={styles.balanceNumber}>{leaveBalance.annual}</Text>
-                                <Text style={styles.balanceLabel}>Annual</Text>
+                        <View style={styles.balanceCards}>
+                            <View style={[styles.balanceCard, styles.halfCard, { backgroundColor: "#dbeafe" }]}>
+                                <Ionicons name="medkit-outline" size={24} color="#2563eb" />
+                                <Text style={styles.balanceNumber}>{leaveBalance.Sick_Leave}</Text>
+                                <Text style={styles.balanceLabel}>Sick Leave</Text>
                             </View>
-                            <View style={[styles.balanceCard, { backgroundColor: "#fef3c7" }]}>
-                                <Ionicons name="medkit" size={24} color="#f59e0b" />
-                                <Text style={styles.balanceNumber}>{leaveBalance.sick}</Text>
-                                <Text style={styles.balanceLabel}>Sick</Text>
+
+                            <View style={[styles.balanceCard, styles.halfCard, { backgroundColor: "#fef3c7" }]}>
+                                <Ionicons name="briefcase-outline" size={24} color="#f59e0b" />
+                                <Text style={styles.balanceNumber}>{leaveBalance.Earned_Leave}</Text>
+                                <Text style={styles.balanceLabel}>Earned Leave</Text>
                             </View>
-                            <View style={[styles.balanceCard, { backgroundColor: "#ede9fe" }]}>
-                                <Ionicons name="person" size={24} color="#8b5cf6" />
-                                <Text style={styles.balanceNumber}>{leaveBalance.personal}</Text>
-                                <Text style={styles.balanceLabel}>Personal</Text>
+
+                            <View style={[styles.balanceCard, styles.halfCard, { backgroundColor: "#dcfce7" }]}>
+                                <Ionicons name="sunny-outline" size={24} color="#16a34a" />
+                                <Text style={styles.balanceNumber}>{leaveBalance.Casual_Leave}</Text>
+                                <Text style={styles.balanceLabel}>Casual Leave</Text>
                             </View>
-                        </ScrollView>
+
+                            <View style={[styles.balanceCard, styles.halfCard, { backgroundColor: "#fee2e2" }]}>
+                                <Ionicons name="cash-outline" size={24} color="#dc2626" />
+                                <Text style={styles.balanceNumber}>{leaveBalance.Paid_Leave}</Text>
+                                <Text style={styles.balanceLabel}>Paid Leave</Text>
+                            </View>
+
+                            <View style={[styles.balanceCard, styles.fullCard, { backgroundColor: "#f3e8ff" }]}>
+                                <Ionicons name="lock-closed-outline" size={24} color="#8b5cf6" />
+                                <Text style={styles.balanceNumber}>{leaveBalance.Reserved_Leave}</Text>
+                                <Text style={styles.balanceLabel}>Reserved Leave</Text>
+                            </View>
+                        </View>
+
                     </View>
 
                     {/* Quick Actions */}
@@ -331,14 +346,26 @@ const styles = StyleSheet.create({
         marginBottom: height * 0.018,
     },
     balanceCards: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
         paddingHorizontal: width * 0.08,
     },
     balanceCard: {
-        padding: width * 0.05,
-        borderRadius: width * 0.03,
-        marginRight: width * 0.04,
         alignItems: "center",
-        minWidth: width * 0.25,
+        justifyContent: "center",
+        borderRadius: 16,
+        paddingVertical: 12,
+        marginVertical: 8,
+        elevation: 3,
+    },
+
+    halfCard: {
+        width: "48%", // 2 cards per row
+    },
+
+    fullCard: {
+        width: "100%", // last card full width
     },
     balanceNumber: {
         fontSize: height * 0.038,

@@ -153,6 +153,7 @@ export default function ApplyLeave() {
                             <Picker.Item label="Earned Leave" value="Earned_Leave" />
 <Picker.Item label="Reserved Leave" value="Reserved_Leave" />
 <Picker.Item label="Casual Leave" value="Casual_Leave" />
+                            <Picker.Item label="Sick Leave" value="Sick_Leave" />
 <Picker.Item label="Paid Leave" value="Paid_Leave" />
 
                         </Picker>
