@@ -78,6 +78,7 @@ export default function ApplyLeave() {
                 `${process.env.EXPO_PUBLIC_URL}/users/leave/apply`,
                 {
                     email: user.email,
+                    department: user.department,
                     leaveType,
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),

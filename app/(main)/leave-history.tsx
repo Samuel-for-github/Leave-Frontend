@@ -64,7 +64,7 @@ export default function LeaveHistory() {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'approved':
+      case 'accepted':
         return '#10b981';
       case 'pending':
         return '#f59e0b';
@@ -77,7 +77,7 @@ export default function LeaveHistory() {
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'approved':
+        case 'accepted':
         return 'checkmark-circle';
       case 'pending':
         return 'time-outline';
