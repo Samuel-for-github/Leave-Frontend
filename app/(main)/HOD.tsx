@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
 interface LeaveRequest {
+
     id: string;
     email: string;
     username: string;
@@ -47,7 +48,7 @@ const api = axios.create({
 });
 
 export default function HODScreen() {
-    const { user } = useAuth();
+    const { user }:any = useAuth();
     const [leaveRequests, setLeaveRequests] = useState<TransformedLeaveRequest[]>([]);
     const [filteredRequests, setFilteredRequests] = useState<TransformedLeaveRequest[]>([]);
     const [selectedFilter, setSelectedFilter] = useState<LeaveStatus | 'ALL'>('PENDING');
@@ -80,7 +81,7 @@ export default function HODScreen() {
         return name.charAt(0).toUpperCase() + name.slice(1).replace(/[0-9]/g, '');
     };
 
-    // Helper function to format leave type
+    // Helper function to format a leave type
     const formatLeaveType = (leaveType: string): string => {
         return leaveType.replace(/_/g, ' ');
     };
@@ -113,9 +114,10 @@ export default function HODScreen() {
                 `/leaves/department/${user?.department}`
             );
 
-            console.log('Response:', response.data.data);
+            // console.log('Response:', response.data.data);
 
             // Transform the data
+            // @ts-ignore
             const transformedData = response.data.data.map(transformLeaveRequest);
             setLeaveRequests(transformedData);
         } catch (error) {
