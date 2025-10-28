@@ -18,6 +18,8 @@ type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 interface LeaveRequest {
     id: string;
     email: string;
+    username: string;
+    role: string;
     department: string;
     leaveType: string;
     startDate: string;
@@ -87,7 +89,7 @@ export default function HODScreen() {
     const transformLeaveRequest = (request: LeaveRequest): TransformedLeaveRequest => {
         return {
             ...request,
-            facultyName: getNameFromEmail(request.email),
+            facultyName: request.username,
             days: calculateDays(request.startDate, request.endDate),
             formattedStartDate: formatDate(request.startDate),
             formattedEndDate: formatDate(request.endDate),
@@ -560,6 +562,7 @@ const styles = StyleSheet.create({
     },
     reason: {
         fontSize: 14,
+        fontWeight: "600",
         color: '#333',
         lineHeight: 20,
         marginBottom: 4,
