@@ -19,7 +19,7 @@ import {Platform} from "react-native";
 export default function Dashboard() {
     const router = useRouter();
     const { user, updateUser, logout }: any = useAuth();
-
+    console.log("index",user)
     const [leaveBalance, setLeaveBalance] = useState<any>({
         Earned_Leave: 0,
         Sick_Leave: 0,
@@ -55,11 +55,11 @@ export default function Dashboard() {
             await updateUser(userInfo);
             if (userInfo.status === "ACCEPTED") {
                 setLeaveBalance({
-                    Earned_Leave: 10,
-                    Sick_Leave: 10,
-                    Reserved_Leave: 10,
-                    Casual_Leave: 5,
-                    Paid_Leave: 5
+                    Earned_Leave: userInfo.earned_leave,
+                    Sick_Leave: userInfo.sick_leave,
+                    Reserved_Leave: userInfo.reserved_leave,
+                    Casual_Leave: userInfo.casual_leave,
+                    Paid_Leave: userInfo.paid_leave
                 });
             }
 

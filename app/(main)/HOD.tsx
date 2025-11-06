@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import axios, { AxiosError } from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
+import {string} from "zod";
 
 type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
@@ -158,7 +159,10 @@ export default function HODScreen() {
 
     const handleLeaveAction = async (
         requestId: string,
-        action: 'ACCEPTED' | 'REJECTED'
+        action: 'ACCEPTED' | 'REJECTED',
+        leaveType?: string,
+        email?:string,
+        days?:number
     ) => {
         Alert.alert(
             `${action === 'ACCEPTED' ? 'Approve' : 'Reject'} Leave`,
@@ -169,14 +173,25 @@ export default function HODScreen() {
                     text: action === 'ACCEPTED' ? 'Approve' : 'Reject',
                     style: action === 'ACCEPTED' ? 'default' : 'destructive',
                     onPress: async () => {
+                        console.log(leaveType, days)
                         try {
+
+                            const response = await api.post(`/users/email`, {email});
+                            console.log(response.data.data);
+
+
                             await api.patch(`/leaves/${requestId}`, {
                                 status: action,
                                 reviewedBy: user?.id || user?.email,
                                 reviewedAt: new Date().toISOString(),
                             });
 
-                            // Update local state
+                            await api.patch(`/users/${email}/leave-balance`, {
+                                leaveType,
+                                days
+                            });
+
+                         //   Update local state
                             setLeaveRequests((prev) =>
                                 prev.map((req) =>
                                     req.id === requestId ? { ...req, status: action } : req
@@ -188,6 +203,8 @@ export default function HODScreen() {
                                 'Success',
                                 `Leave request ${action === 'ACCEPTED' ? 'approved' : 'rejected'} successfully`
                             );
+
+
                         } catch (error) {
                             console.error('Action error:', error);
 
@@ -264,7 +281,7 @@ export default function HODScreen() {
                         style={[styles.actionBtn, styles.rejectBtn]}
                         onPress={(e) => {
                             e.stopPropagation();
-                            handleLeaveAction(item.id, 'REJECTED');
+                            handleLeaveAction(item.id,'REJECTED');
                         }}
                     >
                         <Ionicons name="close-circle" size={20} color="#fff" />
@@ -274,11 +291,11 @@ export default function HODScreen() {
                         style={[styles.actionBtn, styles.approveBtn]}
                         onPress={(e) => {
                             e.stopPropagation();
-                            handleLeaveAction(item.id, 'ACCEPTED');
+                            handleLeaveAction(item.id, 'ACCEPTED', item.leaveType.toLowerCase(), item.email, item.days);
                         }}
                     >
                         <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                        <Text style={styles.btnText}>Approve</Text>
+                        <Text style={styles.btnText}>Accept</Text>
                     </TouchableOpacity>
                 </View>
             )}

@@ -118,7 +118,7 @@ export default function ApplyLeave() {
     };
 
     const resetForm = () => {
-        setLeaveType("annual");
+        setLeaveType("Earned_Leave");
         setStartDate(new Date());
         setEndDate(new Date());
         setReason("");
