@@ -162,11 +162,12 @@ export default function SignUpScreen() {
                                 </View>
 
                                 {/* Department Dropdown */}
+
                                 <View style={[authStyles.inputContainer, { borderWidth: 1, borderColor: '#ccc', borderRadius: 5 }]}>
                                     <Picker
                                         selectedValue={department}
                                         onValueChange={(itemValue) => setDepartment(itemValue)}
-                                        enabled={!loading}
+                                        enabled={!loading&&role !== 'PRINCIPAL'}
                                     >
                                         <Picker.Item label="IT" value="IT" />
                                         <Picker.Item label="CSE" value="CSE" />

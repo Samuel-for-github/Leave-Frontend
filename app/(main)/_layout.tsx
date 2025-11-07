@@ -9,13 +9,18 @@ const { height , width } = Dimensions.get("window");
 export default function AppLayout() {
     const {user}:any = useAuth()
     const [isHOD, setIsHOD] = React.useState(false);
+    const [isPrincipal, setIsPrincipal] = React.useState(false);
     console.log("user in layout:", user);
 
     useEffect(() => {
         if (user?.role === "HOD") {
             setIsHOD(true);
-        } else {
+        } else if (user?.role === "PRINCIPAL") {
+            setIsPrincipal(true);
+        }
+        else {
             setIsHOD(false);
+            setIsPrincipal(false);
         }
     }, [user]);
 
@@ -53,6 +58,7 @@ export default function AppLayout() {
                 name="apply-leave"
                 options={{
                     title: 'Apply Leave',
+                    href: isHOD || isPrincipal? null:'/apply-leave',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="add-circle" size={size} color={color} />
                     ),
@@ -70,6 +76,7 @@ export default function AppLayout() {
                 name="leave-history"
                 options={{
                     title: 'Leave History',
+                    href: isHOD|| isPrincipal ?null:'/leave-history',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="time" size={size} color={color} />
                     ),
@@ -79,7 +86,17 @@ export default function AppLayout() {
                 name="HOD"
                 options={{
                     title: 'Leave Requests',
-                    href: isHOD ? '/HOD' : null, // Hide tab completely if not HOD
+                    href: null, // Hide tab completely if not HOD
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="checkbox-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="Principal"
+                options={{
+                    title: 'Leave Requests',
+                    href: null, // Hide tab completely if not HOD
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="checkbox-outline" size={size} color={color} />
                     ),

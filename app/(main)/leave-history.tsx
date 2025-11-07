@@ -14,6 +14,7 @@ import {
     View,
 } from 'react-native';
 
+
 interface Leave {
     id: string;
     leaveType: string;
@@ -70,6 +71,8 @@ export default function LeaveHistory() {
                 return '#f59e0b';
             case 'rejected':
                 return '#ef4444';
+            case 'accepted_by_hod':
+                return '#f5880b';
             default:
                 return '#6b7280';
         }
@@ -83,6 +86,8 @@ export default function LeaveHistory() {
                 return 'time-outline';
             case 'rejected':
                 return 'close-circle';
+            case 'accepted_by_hod':
+                return 'time-outline';
             default:
                 return 'help-circle';
         }
@@ -103,6 +108,10 @@ export default function LeaveHistory() {
 
     const formatLeaveType = (type: string) => {
         return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+    };
+
+    const formatStausType = (leaveType: string): string => {
+        return leaveType.replace(/_/g, ' ');
     };
 
     const calculateDuration = (start: string, end: string) => {
@@ -189,7 +198,7 @@ export default function LeaveHistory() {
                                     { color: getStatusColor(item.status) },
                                 ]}
                             >
-                                {item.status}
+                                {item.status==='ACCEPTED_BY_HOD'?`Pending but, ${formatStausType(item.status)}`:item.status}
                             </Text>
                         </View>
                     </View>

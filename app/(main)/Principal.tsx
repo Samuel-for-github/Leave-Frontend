@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-    View,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    StyleSheet,
-    RefreshControl,
     Alert,
-    Modal,
+    Dimensions,
+    FlatList, Modal,
+    Platform,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import axios, { AxiosError } from 'axios';
-import { useAuth } from '@/contexts/AuthContext';
-import {string} from "zod";
+import {useRouter} from "expo-router";
+import {useAuth} from "@/contexts/AuthContext";
+import {Ionicons} from "@expo/vector-icons";
 
-type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+import axios, {AxiosError} from "axios";
+
+
+const { height, width } = Dimensions.get("window");
+const isSmallDevice = width < 375;
+const isShortDevice = height < 700;
+
+type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'ACCEPTED_BY_HOD';
 
 interface LeaveRequest {
 
@@ -48,14 +55,16 @@ const api = axios.create({
     },
 });
 
-export default function HODScreen() {
+const Principal = () => {
+    const router = useRouter();
     const { user }:any = useAuth();
     const [leaveRequests, setLeaveRequests] = useState<TransformedLeaveRequest[]>([]);
     const [filteredRequests, setFilteredRequests] = useState<TransformedLeaveRequest[]>([]);
-    const [selectedFilter, setSelectedFilter] = useState<LeaveStatus | 'ALL'>('PENDING');
+    const [selectedFilter, setSelectedFilter] = useState<LeaveStatus | 'ALL'>('ACCEPTED_BY_HOD');
     const [refreshing, setRefreshing] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<TransformedLeaveRequest | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
+
 
     // Helper function to format date
     const formatDate = (dateString: string): string => {
@@ -103,16 +112,14 @@ export default function HODScreen() {
         fetchLeaveRequests();
     }, []);
 
-    useEffect(() => {
-        filterRequests();
-    }, [selectedFilter, leaveRequests]);
+
 
     const fetchLeaveRequests = async () => {
         try {
             setRefreshing(true);
 
             const response = await api.get<LeaveRequest[]>(
-                `/leaves/department/${user?.department}`
+                `/leaves/`
             );
 
             // console.log('Response:', response.data.data);
@@ -150,13 +157,20 @@ export default function HODScreen() {
     const filterRequests = () => {
         if (selectedFilter === 'ALL') {
             setFilteredRequests(leaveRequests);
+        } else if (selectedFilter === 'ACCEPTED_BY_HOD') {
+            // Show only ACCEPTED_BY_HOD requests when Principal views Pending tab
+            setFilteredRequests(
+                leaveRequests.filter((req) => req.status === 'ACCEPTED_BY_HOD')
+            );
         } else {
             setFilteredRequests(
                 leaveRequests.filter((req) => req.status === selectedFilter)
             );
         }
     };
-
+    useEffect(() => {
+        filterRequests();
+    }, [selectedFilter, leaveRequests]);
     const handleLeaveAction = async (
         requestId: string,
         action: 'ACCEPTED' | 'REJECTED',
@@ -181,17 +195,17 @@ export default function HODScreen() {
 
 
                             await api.patch(`/leaves/${requestId}/${email}`, {
-                                status: action === 'ACCEPTED' && 'ACCEPTED_BY_HOD' || action === 'REJECTED' && 'REJECTED_BY_HOD',
+                                status: action,
                                 reviewedBy: user?.id || user?.email,
                                 reviewedAt: new Date().toISOString(),
                             });
 
-                            // await api.patch(`/users/${email}/leave-balance`, {
-                            //     leaveType,
-                            //     days
-                            // });
+                            await api.patch(`/users/${email}/leave-balance`, {
+                                leaveType,
+                                days
+                            });
 
-                         //   Update local state
+                            //   Update local state
                             setLeaveRequests((prev) =>
                                 prev.map((req) =>
                                     req.id === requestId ? { ...req, status: action } : req
@@ -275,7 +289,7 @@ export default function HODScreen() {
                 </Text>
             </View>
 
-            {item.status === 'PENDING' && (
+            {item.status === 'ACCEPTED_BY_HOD' && (
                 <View style={styles.actionButtons}>
                     <TouchableOpacity
                         style={[styles.actionBtn, styles.rejectBtn]}
@@ -302,6 +316,26 @@ export default function HODScreen() {
         </TouchableOpacity>
     );
 
+    const DetailRow = ({
+                           icon,
+                           label,
+                           value,
+                       }: {
+        icon: string;
+        label: string;
+        value: string;
+    }) => (
+        <View style={styles.detailRow}>
+            <View style={styles.detailLabel}>
+                <Ionicons name={icon as any} size={20} color="#666" />
+                <Text style={styles.labelText}>{label}</Text>
+            </View>
+            <Text style={styles.valueText}>{value}</Text>
+        </View>
+    );
+
+
+
     return (
         <View style={styles.container}>
             {/* Filter Tabs */}
@@ -311,28 +345,40 @@ export default function HODScreen() {
                         key={filter}
                         style={[
                             styles.filterTab,
-                            selectedFilter === filter && styles.activeFilterTab,
+                            (selectedFilter === filter || (filter === 'PENDING' && selectedFilter === 'ACCEPTED_BY_HOD')) &&
+                            styles.activeFilterTab,
                         ]}
-                        onPress={() => setSelectedFilter(filter)}
+                        onPress={() => {
+                            if (filter === 'PENDING') {
+                                setSelectedFilter('ACCEPTED_BY_HOD'); // show accepted by HOD instead
+                            } else {
+                                setSelectedFilter(filter);
+                            }
+                        }}
                     >
                         <Text
                             style={[
                                 styles.filterText,
-                                selectedFilter === filter && styles.activeFilterText,
+                                (selectedFilter === filter || (filter === 'PENDING' && selectedFilter === 'ACCEPTED_BY_HOD')) &&
+                                styles.activeFilterText,
                             ]}
                         >
                             {filter.charAt(0) + filter.slice(1).toLowerCase()}
                         </Text>
+
                         {filter !== 'ALL' && (
                             <View style={styles.badge}>
                                 <Text style={styles.badgeText}>
-                                    {leaveRequests.filter((req) => req.status === filter).length}
+                                    {filter === 'PENDING'
+                                        ? leaveRequests.filter((req) => req.status === 'ACCEPTED_BY_HOD').length
+                                        : leaveRequests.filter((req) => req.status === filter).length}
                                 </Text>
                             </View>
                         )}
                     </TouchableOpacity>
                 ))}
             </View>
+
 
             {/* Leave Requests List */}
             <FlatList
@@ -415,7 +461,7 @@ export default function HODScreen() {
                                     value={selectedRequest.formattedSubmittedDate}
                                 />
 
-                                {selectedRequest.status === 'PENDING' && (
+                                {selectedRequest.status === 'ACCEPTED_BY_HOD' && (
                                     <View style={styles.modalActions}>
                                         <TouchableOpacity
                                             style={[styles.modalBtn, styles.rejectBtn]}
@@ -442,88 +488,179 @@ export default function HODScreen() {
             </Modal>
         </View>
     );
-}
+};
 
-const DetailRow = ({
-                       icon,
-                       label,
-                       value,
-                   }: {
-    icon: string;
-    label: string;
-    value: string;
-}) => (
-    <View style={styles.detailRow}>
-        <View style={styles.detailLabel}>
-            <Ionicons name={icon as any} size={20} color="#666" />
-            <Text style={styles.labelText}>{label}</Text>
-        </View>
-        <Text style={styles.valueText}>{value}</Text>
-    </View>
-);
+export default Principal;
 
-export const styles = StyleSheet.create({
+
+const styles = StyleSheet.create({
     container: {
         flex: 1,
-        marginTop: 40,
-        backgroundColor: '#f5f5f5',
+        marginTop: height * 0.05,
+        marginBottom: height * 0.05,
+        backgroundColor: "#f3f4f6",
     },
-    filterContainer: {
-        flexDirection: 'row',
-        padding: 16,
-        marginTop: -45,
-        backgroundColor: '#fff',
+    header: {
+        backgroundColor: "#fff",
+        padding: width * 0.05,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: "#e5e7eb",
     },
-    filterTab: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 8,
+    welcomeText: {
+        fontSize: height * 0.023,
+        fontWeight: "bold",
+        color: "#1f2937",
+    },
+    dateText: {
+        fontSize: height * 0.016,
+        color: "#6b7280",
+        marginTop: height * 0.005,
+    },
+    statusBadge: {
         paddingHorizontal: 12,
-        marginHorizontal: 4,
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
     },
-    activeFilterTab: {
-        backgroundColor: '#007AFF',
+    statusBadgeText: {
+        color: "#fff",
+        fontSize: height * 0.014,
+        fontWeight: "600",
     },
-    filterText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#666',
+    logoutButton: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: "#fee2e2",
     },
-    activeFilterText: {
-        color: '#fff',
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: height * 0.06,
     },
-    badge: {
-        marginLeft: 6,
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+    loadingText: {
+        fontSize: height * 0.018,
+        color: "#6b7280",
     },
-    badgeText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#007AFF',
+    errorContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: height * 0.06,
     },
-    listContainer: {
-        padding: 16,
+    errorText: {
+        fontSize: height * 0.018,
+        color: "#ef4444",
+        marginBottom: height * 0.025,
+    },
+    retryButton: {
+        backgroundColor: "#2563eb",
+        paddingHorizontal: width * 0.05,
+        paddingVertical: height * 0.012,
+        borderRadius: width * 0.02,
+    },
+    retryButtonText: {
+        color: "#fff",
+        fontWeight: "600",
+    },
+    balanceSection: {
+        marginTop: height * 0.02,
+        marginRight: width * 0.025,
+    },
+    sectionTitle: {
+        fontSize: height * 0.021,
+        fontWeight: "bold",
+        color: "#1f2937",
+        marginBottom: height * 0.018,
+    },
+    balanceCards: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        paddingHorizontal: width * 0.08,
+    },
+    balanceCard: {
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 16,
+        paddingVertical: 12,
+        marginVertical: 8,
+        elevation: 3,
+    },
 
+    halfCard: {
+        width: "48%", // 2 cards per row
+    },
+
+    fullCard: {
+        width: "100%", // last card full width
+    },
+    balanceNumber: {
+        fontSize: height * 0.038,
+        fontWeight: "bold",
+        color: "#1f2937",
+        marginVertical: height * 0.012,
+    },
+    balanceLabel: {
+        fontSize: height * 0.016,
+        color: "#6b7280",
+    },
+    quickActions: {
+        padding: width * 0.05,
+    },
+    primaryButton: {
+        backgroundColor: "#2563eb",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: height * 0.02,
+        borderRadius: width * 0.03,
+        gap: width * 0.025,
+    },
+    primaryButtonText: {
+        color: "#fff",
+        fontSize: height * 0.018,
+        fontWeight: "bold",
+    },
+    status_pending: {
+        backgroundColor: '#FFA500',
+    },
+    status_approved: {
+        backgroundColor: '#4CAF50',
+    },
+    status_rejected: {
+        backgroundColor: '#F44336',
     },
     card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: '#ffffff',
+        borderRadius: isSmallDevice ? 12 : 16,
+        marginTop: isShortDevice? 12 : 25,
+        marginBottom: isShortDevice ? 12 : 16,
+        padding: isSmallDevice ? 14 : 16,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+            },
+            android: {
+                elevation: 3,
+            },
+        }),
+        borderWidth: 1,
+        borderColor: '#f1f5f9',
+    },
+    cardBody: {
         marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+    },
+    cardFooter: {
+        paddingTop: isShortDevice ? 10 : 12,
+        borderTopWidth: 1,
+        borderTopColor: '#f1f5f9',
     },
     cardHeader: {
         flexDirection: 'row',
@@ -548,75 +685,7 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
     },
-    statusBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 12,
-        alignSelf: 'flex-start',
-    },
-    status_pending: {
-        backgroundColor: '#FFA500',
-    },
-    status_approved: {
-        backgroundColor: '#4CAF50',
-    },
-    status_rejected: {
-        backgroundColor: '#F44336',
-    },
-    statusText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    cardBody: {
-        marginBottom: 12,
-    },
-    dateRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    dateText: {
-        marginLeft: 8,
-        fontSize: 14,
-        color: '#666',
-    },
-    reason: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: '#333',
-        lineHeight: 20,
-        marginBottom: 4,
-    },
-    submittedDate: {
-        fontSize: 12,
-        color: '#999',
-        fontStyle: 'italic',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    actionBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        borderRadius: 8,
-        gap: 6,
-    },
-    rejectBtn: {
-        backgroundColor: '#F44336',
-    },
-    approveBtn: {
-        backgroundColor: '#4CAF50',
-    },
-    btnText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 14,
-    },
+
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -684,4 +753,113 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
+    statusText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+
+
+
+
+
+
+
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    reason: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: '#333',
+        lineHeight: 20,
+        marginBottom: 4,
+    },
+    submittedDate: {
+        fontSize: 12,
+        color: '#999',
+        fontStyle: 'italic',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    actionBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        gap: 6,
+    },
+    rejectBtn: {
+        backgroundColor: '#F44336',
+    },
+    approveBtn: {
+        backgroundColor: '#4CAF50',
+    },
+    btnText: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 14,
+    },
+
+
+    filterContainer: {
+        flexDirection: 'row',
+        padding: 16,
+        marginTop: -45,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    filterTab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        marginHorizontal: 4,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+    },
+    activeFilterTab: {
+        backgroundColor: '#007AFF',
+    },
+    filterText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#666',
+    },
+    activeFilterText: {
+        color: '#fff',
+    },
+    badge: {
+        marginLeft: 6,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#007AFF',
+    },
+    listContainer: {
+        padding: 16,
+    },
+
+
+    statusBadgeLeave: {
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+
 });

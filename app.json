@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Leave",
+    "name": "Leave Management",
     "slug": "Leave",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,8 +8,23 @@
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.samuelfernandes3301.Leave",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires camera access to upload leave documents.",
+        "NSPhotoLibraryUsageDescription": "This app requires photo library access to select images.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +32,13 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.samuelfernandes_3301.Leave"
+      "package": "com.samuelfernandes_3301.Leave",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -45,6 +66,12 @@
       "eas": {
         "projectId": "7c3c06c9-dbba-4555-9213-b61612bed608"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7c3c06c9-dbba-4555-9213-b61612bed608"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
