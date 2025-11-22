@@ -121,6 +121,12 @@ export default function ApplyLeave() {
                     startDate: startDate.toISOString(),
                     endDate: endDate.toISOString(),
                     reason,
+                    date,
+                    classOrLab,
+                    theoryOrPractical,
+                    fromTime: fromTime.toISOString(),
+                    toTime: toTime.toISOString(),
+                    adjustedBy,
                 },
                 {
                     headers: {
