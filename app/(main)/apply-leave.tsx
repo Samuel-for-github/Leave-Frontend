@@ -22,23 +22,43 @@ const { height, width } = Dimensions.get("window");
 export default function ApplyLeave() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
+    const [facultyList, setFacultyList] = useState([]);
+    const [adjustedBy, setAdjustedBy] = useState(""); // selected value only
+
     const [leaveType, setLeaveType] = useState("Earned_Leave");
+    const [classOrLab, setClassOrLab] =  useState("CR-7");
+    const [theoryOrPractical, setTheoryOrPractical] = useState("THEORY")
     const [startDate, setStartDate] = useState(new Date());
     const [endDate, setEndDate] = useState(new Date());
+    const [date, setDate] = useState(new Date());
     const [reason, setReason] = useState("");
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [userLoading, setUserLoading] = useState(true);
 
-    // Load user data on mount
+    const [fromTime, setFromTime] = useState(new Date());
+    const [showFromTimePicker, setShowFromTimePicker] = useState(false);
+
+    const [toTime, setToTime] = useState(new Date());
+    const [showToTimePicker, setShowToTimePicker] = useState(false);
+// Run only once → load user
     useEffect(() => {
         loadUserData();
     }, []);
 
+// Run when user is loaded
+    useEffect(() => {
+        if (user?.department) {
+            loadFacultyData();
+        }
+    }, [user]);
+
     const loadUserData = async () => {
         try {
             const userData = await AsyncStorage.getItem('userData');
+
             if (userData) {
                 setUser(JSON.parse(userData));
             } else {
@@ -50,6 +70,22 @@ export default function ApplyLeave() {
             Alert.alert('Error', 'Failed to load user data');
         } finally {
             setUserLoading(false);
+        }
+    };
+
+    const loadFacultyData = async () => {
+        try {
+            console.log("apply leave: ", user.department);
+
+            const facultyRes = await axios.get(`${process.env.EXPO_PUBLIC_URL}/users/department/${user.department}`);
+
+            // Use facultyRes.data if needed
+            console.log("faculty data:", facultyRes.data.data);
+            setFacultyList(facultyRes.data.data);
+
+        } catch (error: any) {
+            console.error('Error loading faculty data:', error.message);
+            Alert.alert('Error', 'Failed to load faculty data');
         }
     };
 
@@ -121,6 +157,7 @@ export default function ApplyLeave() {
         setLeaveType("Earned_Leave");
         setStartDate(new Date());
         setEndDate(new Date());
+        setDate(new Date())
         setReason("");
     };
 
@@ -133,6 +170,8 @@ export default function ApplyLeave() {
             </View>
         );
     }
+
+
 
     return (
         <ScrollView style={styles.container}>
@@ -154,11 +193,10 @@ export default function ApplyLeave() {
                             enabled={!loading}
                         >
                             <Picker.Item label="Earned Leave" value="Earned_Leave" />
-<Picker.Item label="Reserved Leave" value="Reserved_Leave" />
-<Picker.Item label="Casual Leave" value="Casual_Leave" />
+                            <Picker.Item label="Reserved Leave" value="Reserved_Leave" />
+                            <Picker.Item label="Casual Leave" value="Casual_Leave" />
                             <Picker.Item label="Sick Leave" value="Sick_Leave" />
-<Picker.Item label="Paid Leave" value="Paid_Leave" />
-
+                            <Picker.Item label="Paid Leave" value="Paid_Leave" />
                         </Picker>
                     </View>
                 </View>
@@ -226,6 +264,150 @@ export default function ApplyLeave() {
                         editable={!loading}
                     />
                 </View>
+
+
+                <View style={styles.loadContainer}>
+                    <Text style={styles.loadText}>Load Adjustment</Text>
+                    <Text style={styles.loadSubText}>(Lecture & Practicals)</Text>
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Date</Text>
+                    <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowDatePicker(true)}
+                        disabled={loading}
+                    >
+                        <Text style={styles.dateButtonText}>
+                            {date.toDateString()}
+                        </Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            display="default"
+                            minimumDate={new Date()}
+                            onChange={(event, date) => {
+                                setShowDatePicker(Platform.OS === "ios");
+                                if (date) setDate(date);
+                            }}
+                        />
+                    )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Class/Lab</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={classOrLab}
+                            onValueChange={setClassOrLab}
+                            style={styles.picker}
+                            enabled={!loading}
+                        >
+                            <Picker.Item label="CR-3" value="CR-3" />
+                            <Picker.Item label="CR-4" value="CR-4" />
+                            <Picker.Item label="CR-5" value="CR-5" />
+                            <Picker.Item label="CR-6" value="CR-6" />
+                            <Picker.Item label="CR-7" value="CR-7" />
+                            <Picker.Item label="CR-8" value="CR-8" />
+                            <Picker.Item label="I1-LAB" value="I1-LAB" />
+                            <Picker.Item label="I2-LAB" value="I2-LAB" />
+
+                        </Picker>
+                    </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Theory or Practical</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={theoryOrPractical}
+                            onValueChange={setTheoryOrPractical}
+                            style={styles.picker}
+                            enabled={!loading}
+                        >
+                            <Picker.Item label="Theory" value="THEORY" />
+                            <Picker.Item label="Practical" value="PRACTICAL" />
+                        </Picker>
+                    </View>
+                </View>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>From Time</Text>
+
+                    <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowFromTimePicker(true)}
+                        disabled={loading}
+                    >
+                        <Text style={styles.dateButtonText}>
+                            {fromTime ? fromTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Select Time"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showFromTimePicker && (
+                        <DateTimePicker
+                            value={fromTime || new Date()}
+                            mode="time"
+                            display="default"
+                            onChange={(event, selectedTime) => {
+                                setShowFromTimePicker(false);
+                                if (selectedTime) {
+                                    setFromTime(selectedTime);
+                                }
+                            }}
+                        />
+                    )}
+                </View>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>To Time</Text>
+
+                    <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowToTimePicker(true)}
+                        disabled={loading}
+                    >
+                        <Text style={styles.dateButtonText}>
+                            {toTime ? toTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Select Time"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {showToTimePicker && (
+                        <DateTimePicker
+                            value={toTime || new Date()}
+                            mode="time"
+                            display="default"
+                            onChange={(event, selectedTime) => {
+                                setShowToTimePicker(false);
+                                if (selectedTime) {
+                                    setToTime(selectedTime);
+                                }
+                            }}
+                        />
+                    )}
+                </View>
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Adjusted By</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={adjustedBy}
+                            onValueChange={(value) => setAdjustedBy(value)}
+                            style={styles.picker}
+                            enabled={!loading}
+                        >
+                            <Picker.Item label="Select Faculty" value="" />
+
+                            {facultyList.map((faculty: any) => (
+                                <Picker.Item
+                                    key={faculty.id}
+                                    label={faculty.username}
+                                    value={faculty.username}
+                                />
+                            ))}
+                        </Picker>
+                    </View>
+                </View>
+
 
                 <TouchableOpacity
                     style={[styles.submitButton, loading && styles.disabledButton]}
@@ -303,6 +485,22 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#374151",
         marginBottom: 8,
+    },
+    loadText:{
+      fontSize: height*0.02,
+      fontWeight: "bold",
+        marginBottom: 8,
+    },
+    loadSubText:{
+
+        marginBottom: 8,
+    },
+    loadContainer:{
+        gap: width*0.01,
+        flexDirection: 'row',
+        // alignItems: "center",
+        justifyContent: "center",
+        alignItems: "center"
     },
     pickerContainer: {
         borderWidth: 1,
