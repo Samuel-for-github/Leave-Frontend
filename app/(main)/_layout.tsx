@@ -10,7 +10,7 @@ export default function AppLayout() {
     const {user}:any = useAuth()
     const [isHOD, setIsHOD] = React.useState(false);
     const [isPrincipal, setIsPrincipal] = React.useState(false);
-    console.log("user in layout:", user);
+
 
     useEffect(() => {
         if (user?.role === "HOD") {

@@ -8,13 +8,19 @@ import {
     RefreshControl,
     Alert,
     Modal,
+    ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios, { AxiosError } from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
-import {string} from "zod";
+// import Table, { Column } from "../components/table.tsx";
 
 type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
+
+
+
+
 
 interface LeaveRequest {
 
@@ -28,12 +34,19 @@ interface LeaveRequest {
     endDate: string;
     reason: string;
     status: LeaveStatus;
+    adjustedBy: string;
+    classOrLab: string;
+    theoryOrPractical: string;
     createdAt: string;
+
 }
 
 interface TransformedLeaveRequest extends LeaveRequest {
     facultyName: string;
     days: number;
+    formatedDate: string;
+    formatedFromTime: string;
+    formatedToTime: string;
     formattedStartDate: string;
     formattedEndDate: string;
     formattedSubmittedDate: string;
@@ -67,6 +80,14 @@ export default function HODScreen() {
         });
     };
 
+    const formateTime = (dateString: string): string => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
     // Helper function to calculate days between dates
     const calculateDays = (startDate: string, endDate: string): number => {
         const start = new Date(startDate);
@@ -89,10 +110,14 @@ export default function HODScreen() {
 
     // Transform API data to match UI requirements
     const transformLeaveRequest = (request: LeaveRequest): TransformedLeaveRequest => {
+        console.log("test", request);
         return {
             ...request,
             facultyName: request.username,
             days: calculateDays(request.startDate, request.endDate),
+            formatedDate: formatDate(request.startDate),
+            formatedFromTime: formateTime(request.startDate),
+            formatedToTime: formateTime(request.endDate),
             formattedStartDate: formatDate(request.startDate),
             formattedEndDate: formatDate(request.endDate),
             formattedSubmittedDate: formatDate(request.createdAt),
@@ -368,7 +393,7 @@ export default function HODScreen() {
                         </View>
 
                         {selectedRequest && (
-                            <View style={styles.modalBody}>
+                            <ScrollView style={styles.modalBody}>
                                 <DetailRow
                                     icon="person-outline"
                                     label="Faculty Name"
@@ -409,6 +434,30 @@ export default function HODScreen() {
                                     label="Status"
                                     value={selectedRequest.status}
                                 />
+                                <DetailRow icon={"checkmark-done-outline"}
+                                           label={"Adjusted By"}
+                                           value={selectedRequest.adjustedBy}
+                                />
+                                <DetailRow icon={"checkmark-done-outline"}
+                                           label={"Class/Lab"}
+                                           value={selectedRequest.classOrLab}
+                                />
+                                <DetailRow icon={"time-outline"}
+                                           label={"date"}
+                                           value={selectedRequest.formatedDate}
+                                />
+                                <DetailRow icon={"time-outline"}
+                                           label={"From Time"}
+                                           value={selectedRequest.formatedFromTime}
+                                />
+                                <DetailRow icon={"time-outline"}
+                                           label={"To Time"}
+                                           value={selectedRequest.formatedToTime}
+                                />
+                                <DetailRow icon={"checkmark-done-outline"}
+                                           label={"Theory/Practical"}
+                                           value={selectedRequest.theoryOrPractical}
+                                />
                                 <DetailRow
                                     icon="checkmark-done-outline"
                                     label="Submitted On"
@@ -431,11 +480,11 @@ export default function HODScreen() {
                                                 handleLeaveAction(selectedRequest.id, 'ACCEPTED')
                                             }
                                         >
-                                            <Text style={styles.btnText}>Approve</Text>
+                                            <Text style={styles.btnText}>Accept</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
-                            </View>
+                            </ScrollView>
                         )}
                     </View>
                 </View>
@@ -453,7 +502,9 @@ const DetailRow = ({
     label: string;
     value: string;
 }) => (
-    <View style={styles.detailRow}>
+    <View
+
+        style={styles.detailRow}>
         <View style={styles.detailLabel}>
             <Ionicons name={icon as any} size={20} color="#666" />
             <Text style={styles.labelText}>{label}</Text>
@@ -652,7 +703,8 @@ export const styles = StyleSheet.create({
         color: '#333',
     },
     modalBody: {
-        padding: 20,
+        paddingHorizontal: 20,
+        marginVertical: 10
     },
     detailRow: {
         marginBottom: 20,
