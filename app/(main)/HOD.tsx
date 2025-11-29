@@ -10,20 +10,13 @@ import {
     Modal,
     ScrollView
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import axios, { AxiosError } from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
-// import Table, { Column } from "../components/table.tsx";
 
 type LeaveStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 
-
-
-
-
-
 interface LeaveRequest {
-
     id: string;
     email: string;
     username: string;
@@ -38,7 +31,6 @@ interface LeaveRequest {
     classOrLab: string;
     theoryOrPractical: string;
     createdAt: string;
-
 }
 
 interface TransformedLeaveRequest extends LeaveRequest {
@@ -52,7 +44,6 @@ interface TransformedLeaveRequest extends LeaveRequest {
     formattedSubmittedDate: string;
 }
 
-// Create axios instance with base configuration
 const api = axios.create({
     baseURL: process.env.EXPO_PUBLIC_URL,
     timeout: 10000,
@@ -62,7 +53,7 @@ const api = axios.create({
 });
 
 export default function HODScreen() {
-    const { user }:any = useAuth();
+    const { user }: any = useAuth();
     const [leaveRequests, setLeaveRequests] = useState<TransformedLeaveRequest[]>([]);
     const [filteredRequests, setFilteredRequests] = useState<TransformedLeaveRequest[]>([]);
     const [selectedFilter, setSelectedFilter] = useState<LeaveStatus | 'ALL'>('PENDING');
@@ -70,7 +61,6 @@ export default function HODScreen() {
     const [selectedRequest, setSelectedRequest] = useState<TransformedLeaveRequest | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
 
-    // Helper function to format date
     const formatDate = (dateString: string): string => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -88,7 +78,6 @@ export default function HODScreen() {
         });
     };
 
-    // Helper function to calculate days between dates
     const calculateDays = (startDate: string, endDate: string): number => {
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -97,18 +86,15 @@ export default function HODScreen() {
         return diffDays + 1;
     };
 
-    // Helper function to extract name from email
     const getNameFromEmail = (email: string): string => {
         const name = email.split('@')[0];
         return name.charAt(0).toUpperCase() + name.slice(1).replace(/[0-9]/g, '');
     };
 
-    // Helper function to format a leave type
     const formatLeaveType = (leaveType: string): string => {
         return leaveType.replace(/_/g, ' ');
     };
 
-    // Transform API data to match UI requirements
     const transformLeaveRequest = (request: LeaveRequest): TransformedLeaveRequest => {
         console.log("test", request);
         return {
@@ -140,9 +126,6 @@ export default function HODScreen() {
                 `/leaves/department/${user?.department}`
             );
 
-            // console.log('Response:', response.data.data);
-
-            // Transform the data
             // @ts-ignore
             const transformedData = response.data.data.map(transformLeaveRequest);
             setLeaveRequests(transformedData);
@@ -152,16 +135,13 @@ export default function HODScreen() {
             if (axios.isAxiosError(error)) {
                 const axiosError = error as AxiosError;
                 if (axiosError.response) {
-                    // Server responded with error status
                     Alert.alert(
                         'Error',
                         `Failed to fetch leave requests: ${axiosError.response.status}`
                     );
                 } else if (axiosError.request) {
-                    // Request made but no response
                     Alert.alert('Error', 'No response from server. Please check your connection.');
                 } else {
-                    // Error in request setup
                     Alert.alert('Error', 'Failed to fetch leave requests');
                 }
             } else {
@@ -186,8 +166,8 @@ export default function HODScreen() {
         requestId: string,
         action: 'ACCEPTED' | 'REJECTED',
         leaveType?: string,
-        email?:string,
-        days?:number
+        email?: string,
+        days?: number
     ) => {
         Alert.alert(
             `${action === 'ACCEPTED' ? 'Approve' : 'Reject'} Leave`,
@@ -200,10 +180,8 @@ export default function HODScreen() {
                     onPress: async () => {
                         console.log(leaveType, days)
                         try {
-
-                            const response = await api.post(`/users/email`, {email});
+                            const response = await api.post(`/users/email`, { email });
                             console.log(response.data.data);
-
 
                             await api.patch(`/leaves/${requestId}/${email}`, {
                                 status: action === 'ACCEPTED' && 'ACCEPTED_BY_HOD' || action === 'REJECTED' && 'REJECTED_BY_HOD',
@@ -211,12 +189,6 @@ export default function HODScreen() {
                                 reviewedAt: new Date().toISOString(),
                             });
 
-                            // await api.patch(`/users/${email}/leave-balance`, {
-                            //     leaveType,
-                            //     days
-                            // });
-
-                         //   Update local state
                             setLeaveRequests((prev) =>
                                 prev.map((req) =>
                                     req.id === requestId ? { ...req, status: action } : req
@@ -228,7 +200,6 @@ export default function HODScreen() {
                                 'Success',
                                 `Leave request ${action === 'ACCEPTED' ? 'approved' : 'rejected'} successfully`
                             );
-
 
                         } catch (error) {
                             console.error('Action error:', error);
@@ -306,7 +277,7 @@ export default function HODScreen() {
                         style={[styles.actionBtn, styles.rejectBtn]}
                         onPress={(e) => {
                             e.stopPropagation();
-                            handleLeaveAction(item.id,'REJECTED');
+                            handleLeaveAction(item.id, 'REJECTED');
                         }}
                     >
                         <Ionicons name="close-circle" size={20} color="#fff" />
@@ -397,68 +368,89 @@ export default function HODScreen() {
                                 <DetailRow
                                     icon="person-outline"
                                     label="Faculty Name"
+                                    iconLib="ion"
                                     value={selectedRequest.facultyName}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="mail-outline"
                                     label="Email"
                                     value={selectedRequest.email}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="business-outline"
                                     label="Department"
                                     value={selectedRequest.department}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="briefcase-outline"
                                     label="Leave Type"
                                     value={formatLeaveType(selectedRequest.leaveType)}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="calendar-outline"
                                     label="Duration"
                                     value={`${selectedRequest.formattedStartDate} to ${selectedRequest.formattedEndDate}`}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="time-outline"
                                     label="Total Days"
                                     value={`${selectedRequest.days} day${selectedRequest.days !== 1 ? 's' : ''}`}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="document-text-outline"
                                     label="Reason"
                                     value={selectedRequest.reason}
                                 />
                                 <DetailRow
+                                    iconLib="ion"
                                     icon="information-circle-outline"
                                     label="Status"
                                     value={selectedRequest.status}
                                 />
-                                <DetailRow icon={"checkmark-done-outline"}
-                                           label={"Adjusted By"}
-                                           value={selectedRequest.adjustedBy}
-                                />
-                                <DetailRow icon={"checkmark-done-outline"}
-                                           label={"Class/Lab"}
-                                           value={selectedRequest.classOrLab}
-                                />
-                                <DetailRow icon={"time-outline"}
-                                           label={"date"}
-                                           value={selectedRequest.formatedDate}
-                                />
-                                <DetailRow icon={"time-outline"}
-                                           label={"From Time"}
-                                           value={selectedRequest.formatedFromTime}
-                                />
-                                <DetailRow icon={"time-outline"}
-                                           label={"To Time"}
-                                           value={selectedRequest.formatedToTime}
-                                />
-                                <DetailRow icon={"checkmark-done-outline"}
-                                           label={"Theory/Practical"}
-                                           value={selectedRequest.theoryOrPractical}
+                                <DetailRow
+                                    iconLib="ion"
+                                    icon="person-outline"
+                                    label="Adjusted By"
+                                    value={selectedRequest.adjustedBy || 'N/A'}
                                 />
                                 <DetailRow
+                                    iconLib="material"
+                                    icon="meeting-room"
+                                    label="Class/Lab"
+                                    value={selectedRequest.classOrLab || 'N/A'}
+                                />
+                                <DetailRow
+                                    iconLib="ion"
+                                    icon="calendar-outline"
+                                    label="Date"
+                                    value={selectedRequest.formatedDate}
+                                />
+                                <DetailRow
+                                    iconLib="ion"
+                                    icon="time-outline"
+                                    label="From Time"
+                                    value={selectedRequest.formatedFromTime}
+                                />
+                                <DetailRow
+                                    iconLib="ion"
+                                    icon="time-outline"
+                                    label="To Time"
+                                    value={selectedRequest.formatedToTime}
+                                />
+                                <DetailRow
+                                    iconLib="material"
+                                    icon="science"
+                                    label="Theory/Practical"
+                                    value={selectedRequest.theoryOrPractical || 'N/A'}
+                                />
+                                <DetailRow
+                                    iconLib="ion"
                                     icon="checkmark-done-outline"
                                     label="Submitted On"
                                     value={selectedRequest.formattedSubmittedDate}
@@ -493,20 +485,25 @@ export default function HODScreen() {
     );
 }
 
+// Fixed DetailRow component with proper typing
 const DetailRow = ({
                        icon,
                        label,
                        value,
+                       iconLib = "ion"
                    }: {
     icon: string;
     label: string;
     value: string;
+    iconLib?: "ion" | "material";
 }) => (
-    <View
-
-        style={styles.detailRow}>
+    <View style={styles.detailRow}>
         <View style={styles.detailLabel}>
-            <Ionicons name={icon as any} size={20} color="#666" />
+            {iconLib === "ion" ? (
+                <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color="#666" />
+            ) : (
+                <MaterialIcons name={icon as keyof typeof MaterialIcons.glyphMap} size={20} color="#666" />
+            )}
             <Text style={styles.labelText}>{label}</Text>
         </View>
         <Text style={styles.valueText}>{value}</Text>
@@ -563,7 +560,6 @@ export const styles = StyleSheet.create({
     },
     listContainer: {
         padding: 16,
-
     },
     card: {
         backgroundColor: '#fff',
@@ -729,6 +725,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
         marginTop: 20,
+        marginBottom: 20,
     },
     modalBtn: {
         flex: 1,
