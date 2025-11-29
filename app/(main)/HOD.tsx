@@ -86,10 +86,10 @@ export default function HODScreen() {
         return diffDays + 1;
     };
 
-    const getNameFromEmail = (email: string): string => {
-        const name = email.split('@')[0];
-        return name.charAt(0).toUpperCase() + name.slice(1).replace(/[0-9]/g, '');
-    };
+    // const getNameFromEmail = (email: string): string => {
+    //     const name = email.split('@')[0];
+    //     return name.charAt(0).toUpperCase() + name.slice(1).replace(/[0-9]/g, '');
+    // };
 
     const formatLeaveType = (leaveType: string): string => {
         return leaveType.replace(/_/g, ' ');
